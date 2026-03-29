@@ -327,6 +327,24 @@
     color: #E65100;
   }
 
+  .delete-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    border: none;
+    background: transparent;
+    color: #ccc;
+    font-size: 16px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: background 0.15s, color 0.15s;
+    margin-left: 4px;
+  }
+  .delete-btn:hover { background: #fdecea; color: #c0392b; }
+
   .add-custom {
     position: fixed;
     bottom: 20px;
@@ -837,7 +855,8 @@ function render(filter = "") {
       const key = itemKey(cat.id, item.name);
       const isChecked = checked[key];
       const isHidden = fl && !item.name.toLowerCase().includes(fl);
-      html += `<div class="item-row${isChecked ? " checked" : ""}${isHidden ? " hidden" : ""}" onclick="toggleItem('${cat.id}', '${item.name.replace(/'/g,"\\'")}')">
+      const escapedName = item.name.replace(/'/g,"\\'");
+      html += `<div class="item-row${isChecked ? " checked" : ""}${isHidden ? " hidden" : ""}" onclick="toggleItem('${cat.id}', '${escapedName}')">
         <div class="checkbox">
           <svg class="checkmark" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5"><polyline points="20 6 9 17 4 12"/></svg>
         </div>
@@ -847,6 +866,7 @@ function render(filter = "") {
         </div>
         ${item.suggested ? `<div class="item-badge suggested">💡 Suggested</div>` : ""}
         ${item.custom ? `<div class="item-badge">Custom</div>` : ""}
+        ${item.custom ? `<button class="delete-btn" title="Delete item" onclick="event.stopPropagation(); deleteCustomItem('${cat.id}', '${escapedName}')">🗑️</button>` : ""}
       </div>`;
     });
     html += `</div></div>`;
@@ -916,6 +936,15 @@ function addCustomItem() {
   saveCustom();
   closeModal();
   render(document.getElementById("searchInput").value);
+}
+
+function deleteCustomItem(catId, name) {
+  customItems = customItems.filter(i => !(i.catId === catId && i.name === name));
+  delete checked[itemKey(catId, name)];
+  saveCustom();
+  saveChecked();
+  render(document.getElementById("searchInput").value);
+  showToast("🗑️ Item removed");
 }
 
 function showToast(msg) {
