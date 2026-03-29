@@ -1,0 +1,843 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🛒 Shopping List</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #F5F0E8;
+    --surface: #FFFDF7;
+    --ink: #1A1A1A;
+    --ink-soft: #6B6558;
+    --accent: #D4622A;
+    --accent-soft: #F5E6DC;
+    --green: #3A7D44;
+    --green-soft: #E0F0E3;
+    --border: #E0D9CC;
+    --shadow: 0 2px 12px rgba(0,0,0,0.07);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    min-height: 100vh;
+    padding: 0 0 80px;
+  }
+
+  header {
+    background: var(--ink);
+    color: white;
+    padding: 28px 20px 24px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  header h1 {
+    font-family: 'Syne', sans-serif;
+    font-size: 22px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+  }
+
+  .header-right {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .progress-pill {
+    background: rgba(255,255,255,0.12);
+    border-radius: 20px;
+    padding: 5px 14px;
+    font-size: 13px;
+    font-weight: 500;
+    white-space: nowrap;
+  }
+
+  .btn-reset {
+    background: var(--accent);
+    border: none;
+    color: white;
+    border-radius: 8px;
+    padding: 7px 14px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: opacity 0.2s;
+  }
+  .btn-reset:hover { opacity: 0.85; }
+
+  .search-bar {
+    padding: 14px 20px 0;
+    position: sticky;
+    top: 78px;
+    z-index: 99;
+    background: var(--bg);
+    padding-bottom: 4px;
+  }
+
+  .search-bar input {
+    width: 100%;
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: 12px;
+    padding: 11px 16px 11px 40px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    color: var(--ink);
+    outline: none;
+    transition: border-color 0.2s;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='none' stroke='%236B6558' stroke-width='2' viewBox='0 0 24 24'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cpath d='m21 21-4.35-4.35'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: 14px center;
+  }
+  .search-bar input:focus { border-color: var(--accent); }
+
+  .main { padding: 16px 16px 0; }
+
+  .category-block {
+    background: var(--surface);
+    border-radius: 16px;
+    border: 1.5px solid var(--border);
+    margin-bottom: 14px;
+    overflow: hidden;
+    box-shadow: var(--shadow);
+  }
+
+  .category-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 16px;
+    cursor: pointer;
+    user-select: none;
+    border-bottom: 1.5px solid var(--border);
+    transition: background 0.15s;
+  }
+  .category-header:hover { background: var(--accent-soft); }
+
+  .category-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .category-emoji {
+    font-size: 20px;
+    width: 36px;
+    height: 36px;
+    background: var(--bg);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .category-name {
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 15px;
+  }
+
+  .category-count {
+    font-size: 12px;
+    color: var(--ink-soft);
+    font-weight: 400;
+    margin-top: 1px;
+  }
+
+  .category-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .cat-progress {
+    font-size: 12px;
+    color: var(--ink-soft);
+    font-weight: 500;
+  }
+
+  .chevron {
+    width: 20px;
+    height: 20px;
+    transition: transform 0.25s;
+    color: var(--ink-soft);
+  }
+  .category-block.collapsed .chevron { transform: rotate(-90deg); }
+
+  .items-list {
+    padding: 4px 0;
+    transition: all 0.2s;
+  }
+  .category-block.collapsed .items-list { display: none; }
+
+  .item-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 16px;
+    cursor: pointer;
+    transition: background 0.12s;
+    border-bottom: 1px solid var(--border);
+  }
+  .item-row:last-child { border-bottom: none; }
+  .item-row:hover { background: var(--bg); }
+
+  .item-row.checked { background: var(--green-soft); }
+  .item-row.checked .item-name { text-decoration: line-through; color: var(--green); }
+  .item-row.checked .item-qty { color: var(--green); opacity: 0.7; }
+
+  .item-row.hidden { display: none; }
+
+  .checkbox {
+    width: 22px;
+    height: 22px;
+    border-radius: 7px;
+    border: 2px solid var(--border);
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s;
+    background: white;
+  }
+  .item-row.checked .checkbox {
+    background: var(--green);
+    border-color: var(--green);
+  }
+  .checkmark {
+    display: none;
+    color: white;
+  }
+  .item-row.checked .checkmark { display: block; }
+
+  .item-info { flex: 1; min-width: 0; }
+
+  .item-name {
+    font-size: 14px;
+    font-weight: 500;
+    transition: color 0.15s;
+  }
+
+  .item-qty {
+    font-size: 12px;
+    color: var(--ink-soft);
+    margin-top: 1px;
+  }
+
+  .item-badge {
+    font-size: 10px;
+    padding: 2px 8px;
+    border-radius: 20px;
+    background: var(--accent-soft);
+    color: var(--accent);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    flex-shrink: 0;
+  }
+
+  .item-badge.suggested {
+    background: #FFF3E0;
+    color: #E65100;
+  }
+
+  .add-custom {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    left: 20px;
+    background: var(--ink);
+    color: white;
+    border: none;
+    border-radius: 14px;
+    padding: 0;
+    font-family: 'DM Sans', sans-serif;
+    cursor: pointer;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+    overflow: hidden;
+    z-index: 200;
+  }
+
+  .add-custom-inner {
+    display: flex;
+    align-items: center;
+    padding: 14px 20px;
+    gap: 10px;
+  }
+
+  .add-custom span {
+    font-size: 15px;
+    font-weight: 600;
+  }
+
+  .add-custom .plus {
+    width: 28px;
+    height: 28px;
+    background: var(--accent);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    line-height: 1;
+    flex-shrink: 0;
+  }
+
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 300;
+    display: none;
+    align-items: flex-end;
+  }
+  .modal-overlay.open { display: flex; }
+
+  .modal {
+    background: var(--surface);
+    border-radius: 20px 20px 0 0;
+    padding: 24px 20px 40px;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .modal h3 {
+    font-family: 'Syne', sans-serif;
+    font-size: 18px;
+    font-weight: 700;
+  }
+
+  .modal input, .modal select {
+    width: 100%;
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 14px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    color: var(--ink);
+    background: var(--bg);
+    outline: none;
+  }
+  .modal input:focus, .modal select:focus { border-color: var(--accent); }
+
+  .modal-btns {
+    display: flex;
+    gap: 10px;
+  }
+
+  .modal-btns button {
+    flex: 1;
+    padding: 13px;
+    border-radius: 10px;
+    border: none;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .btn-cancel {
+    background: var(--bg);
+    color: var(--ink);
+    border: 1.5px solid var(--border) !important;
+  }
+
+  .btn-add-item {
+    background: var(--accent);
+    color: white;
+  }
+
+  .water-section {
+    padding: 0 16px 4px;
+    margin-top: -6px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .water-card {
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: 16px;
+    padding: 14px 16px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    box-shadow: var(--shadow);
+  }
+
+  .water-icon {
+    font-size: 28px;
+  }
+
+  .water-info { flex: 1; }
+  .water-info strong {
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 15px;
+    display: block;
+  }
+  .water-info span {
+    font-size: 12px;
+    color: var(--ink-soft);
+  }
+
+  .water-toggle {
+    display: flex;
+    gap: 6px;
+  }
+
+  .water-btn {
+    padding: 6px 14px;
+    border-radius: 20px;
+    border: 1.5px solid var(--border);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    background: var(--bg);
+    transition: all 0.15s;
+  }
+  .water-btn.active-low { background: #FFF3E0; border-color: #E65100; color: #E65100; }
+  .water-btn.active-full { background: var(--green-soft); border-color: var(--green); color: var(--green); }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🛒 Shopping List</h1>
+  <div class="header-right">
+    <div class="progress-pill" id="globalProgress">0 / 0</div>
+    <button class="btn-reset" onclick="resetAll()">Reset</button>
+  </div>
+</header>
+
+<div class="search-bar">
+  <input type="text" id="searchInput" placeholder="Search items…" oninput="filterItems(this.value)">
+</div>
+
+<div class="main" id="mainContent"></div>
+
+<button class="add-custom" onclick="openModal()">
+  <div class="add-custom-inner">
+    <div class="plus">+</div>
+    <span>Add custom item</span>
+  </div>
+</button>
+
+<div class="modal-overlay" id="modalOverlay" onclick="closeIfOutside(event)">
+  <div class="modal">
+    <h3>Add Item</h3>
+    <input type="text" id="newItemName" placeholder="Item name (e.g. Honey)">
+    <input type="text" id="newItemQty" placeholder="Quantity (e.g. 1 jar) — optional">
+    <select id="newItemCat"></select>
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="closeModal()">Cancel</button>
+      <button class="btn-add-item" onclick="addCustomItem()">Add</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const categories = [
+  {
+    id: "staples",
+    emoji: "🌾",
+    name: "Staples & Grains",
+    items: [
+      { name: "Rice", qty: "2–3 kg" },
+      { name: "Pasta", qty: "3–5 packs" },
+      { name: "Lentils or Beans", qty: "1–2 kg" },
+      { name: "Flour", qty: "1–2 kg" },
+      { name: "Oats", qty: "" },
+      { name: "Perly (Barley couscous)", qty: "" },
+      // Suggested
+      { name: "Couscous", qty: "1–2 kg", suggested: true },
+      { name: "Chickpeas", qty: "1 kg", suggested: true },
+      { name: "Breadcrumbs", qty: "", suggested: true },
+    ]
+  },
+  {
+    id: "bread",
+    emoji: "🍞",
+    name: "Bread & Bakery",
+    items: [
+      { name: "Khobz (Moroccan bread)", qty: "" },
+      { name: "Baguette", qty: "" },
+      { name: "Msemen", qty: "" },
+      { name: "Pain de mie", qty: "" },
+      { name: "Bread for freezing", qty: "" },
+      // Suggested
+      { name: "Harcha", qty: "", suggested: true },
+      { name: "Meloui", qty: "", suggested: true },
+    ]
+  },
+  {
+    id: "proteins",
+    emoji: "🥩",
+    name: "Proteins",
+    items: [
+      { name: "Chicken or Turkey", qty: "1.5–2 kg" },
+      { name: "Meat (beef/lamb)", qty: "0.5–1 kg" },
+      { name: "Eggs", qty: "12–18" },
+      { name: "Seafood", qty: "" },
+      { name: "Sardines (optional)", qty: "" },
+      // Suggested
+      { name: "Merguez sausages", qty: "", suggested: true },
+      { name: "Kefta", qty: "", suggested: true },
+    ]
+  },
+  {
+    id: "canned",
+    emoji: "🥫",
+    name: "Canned & Packaged",
+    items: [
+      { name: "Tuna cans", qty: "3–4 cans" },
+      { name: "Tomato sauce", qty: "2–3 cans" },
+      { name: "White sauce (Olla)", qty: "" },
+      { name: "Black olives", qty: "" },
+      { name: "Green olives", qty: "" },
+      { name: "Corn (Maïs)", qty: "" },
+      { name: "Sugar", qty: "" },
+      { name: "Tea", qty: "" },
+      { name: "Coffee", qty: "" },
+      { name: "Dates", qty: "" },
+      // Suggested
+      { name: "Honey", qty: "1 jar", suggested: true },
+      { name: "Jam", qty: "1 jar", suggested: true },
+      { name: "Peanut butter", qty: "", suggested: true },
+      { name: "Tomato paste", qty: "2–3 cans", suggested: true },
+    ]
+  },
+  {
+    id: "dairy",
+    emoji: "🥛",
+    name: "Dairy",
+    items: [
+      { name: "Milk", qty: "1 L" },
+      { name: "Yogurts", qty: "2–3" },
+      { name: "Cheese (optional)", qty: "" },
+      // Suggested
+      { name: "Butter", qty: "250 g", suggested: true },
+      { name: "Raïb (fermented milk)", qty: "", suggested: true },
+      { name: "Laughing Cow / Kiri", qty: "", suggested: true },
+    ]
+  },
+  {
+    id: "vegetables",
+    emoji: "🥦",
+    name: "Vegetables",
+    items: [
+      { name: "Tomatoes", qty: "1 kg" },
+      { name: "Onions", qty: "1 kg" },
+      { name: "Potatoes", qty: "1–2 kg" },
+      { name: "Zucchinis (Courgette)", qty: "1 kg" },
+      { name: "Garlic", qty: "" },
+      { name: "Green peppers", qty: "" },
+      { name: "Lemon (Msyer)", qty: "" },
+      { name: "Frozen vegetables", qty: "" },
+      // Suggested
+      { name: "Carrots", qty: "1 kg", suggested: true },
+      { name: "Eggplant (Btinjan)", qty: "", suggested: true },
+      { name: "Bell peppers", qty: "", suggested: true },
+      { name: "Spinach", qty: "", suggested: true },
+      { name: "Cucumber", qty: "", suggested: true },
+    ]
+  },
+  {
+    id: "fruits",
+    emoji: "🍎",
+    name: "Fruits",
+    items: [
+      { name: "Bananas", qty: "" },
+      { name: "Apples", qty: "" },
+      { name: "Oranges", qty: "" },
+      { name: "Clementines", qty: "" },
+      { name: "Avocado", qty: "" },
+      // Suggested
+      { name: "Grapes", qty: "", suggested: true },
+      { name: "Strawberries", qty: "", suggested: true },
+      { name: "Watermelon (seasonal)", qty: "", suggested: true },
+    ]
+  },
+  {
+    id: "herbs",
+    emoji: "🌿",
+    name: "Fresh Herbs & Aromatics",
+    items: [
+      { name: "Parsley (M3dnos)", qty: "" },
+      { name: "Coriander / Cilantro (9zbor)", qty: "" },
+      { name: "Mint (N3na3)", qty: "" },
+      { name: "Basil (Basilic)", qty: "" },
+      { name: "Oregano (Z3ter)", qty: "" },
+      { name: "Bay leaf (Wrqa sidna moussa)", qty: "" },
+      { name: "Dried mint (N3na3 sèche)", qty: "" },
+      // Suggested
+      { name: "Fresh ginger", qty: "", suggested: true },
+      { name: "Chili peppers", qty: "", suggested: true },
+    ]
+  },
+  {
+    id: "oils",
+    emoji: "🫒",
+    name: "Oils & Seasonings",
+    items: [
+      { name: "Olive oil", qty: "1 bottle" },
+      { name: "Sunflower oil", qty: "1 bottle" },
+      { name: "Salt", qty: "" },
+      { name: "Pepper", qty: "" },
+      { name: "Paprika", qty: "" },
+      { name: "Cumin", qty: "" },
+      { name: "Turmeric (Khrqoum)", qty: "" },
+      { name: "Ginger powder (Skingbir)", qty: "" },
+      // Suggested
+      { name: "Ras el hanout", qty: "", suggested: true },
+      { name: "Cinnamon", qty: "", suggested: true },
+      { name: "Saffron", qty: "", suggested: true },
+      { name: "Harissa", qty: "", suggested: true },
+    ]
+  },
+  {
+    id: "water",
+    emoji: "💧",
+    name: "Water",
+    isWater: true,
+    items: []
+  },
+  {
+    id: "cleaning",
+    emoji: "🧴",
+    name: "Home & Cleaning",
+    items: [
+      { name: "Toilet paper", qty: "" },
+      { name: "Detergent (Washing powder)", qty: "" },
+      { name: "Dish soap", qty: "" },
+      { name: "Trash bags", qty: "" },
+      { name: "Tissues (Mouchoir)", qty: "×2 packs (600)" },
+      { name: "Toothpaste (Dentifrice)", qty: "" },
+      { name: "Liquid soap (Savon liquide)", qty: "" },
+      // Suggested
+      { name: "Sponges / Scrubbers", qty: "", suggested: true },
+      { name: "Floor cleaner", qty: "", suggested: true },
+      { name: "Glass cleaner", qty: "", suggested: true },
+    ]
+  },
+];
+
+const STORAGE_KEY = "shoppingChecked_v3";
+const WATER_KEY = "waterStatus_v1";
+const CUSTOM_KEY = "customItems_v1";
+
+let checked = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
+let waterStatus = localStorage.getItem(WATER_KEY) || "none";
+let customItems = JSON.parse(localStorage.getItem(CUSTOM_KEY) || "[]");
+
+function saveChecked() { localStorage.setItem(STORAGE_KEY, JSON.stringify(checked)); }
+function saveWater() { localStorage.setItem(WATER_KEY, waterStatus); }
+function saveCustom() { localStorage.setItem(CUSTOM_KEY, JSON.stringify(customItems)); }
+
+function itemKey(catId, name) { return catId + "::" + name; }
+
+function toggleItem(catId, name) {
+  const key = itemKey(catId, name);
+  checked[key] = !checked[key];
+  saveChecked();
+  render();
+  updateProgress();
+}
+
+function setWater(status) {
+  waterStatus = status;
+  saveWater();
+  renderWater();
+}
+
+function resetAll() {
+  if (!confirm("Reset all checkboxes?")) return;
+  checked = {};
+  waterStatus = "none";
+  saveChecked();
+  saveWater();
+  render();
+  updateProgress();
+}
+
+function getAllItems() {
+  let all = [];
+  categories.forEach(cat => {
+    if (cat.isWater) return;
+    cat.items.forEach(item => all.push({ catId: cat.id, ...item }));
+    (customItems.filter(c => c.catId === cat.id)).forEach(item => all.push({ catId: cat.id, ...item, custom: true }));
+  });
+  return all;
+}
+
+function updateProgress() {
+  const all = getAllItems();
+  const total = all.length;
+  const done = all.filter(i => checked[itemKey(i.catId, i.name)]).length;
+  document.getElementById("globalProgress").textContent = done + " / " + total;
+}
+
+function renderWater() {
+  const el = document.getElementById("waterWidget");
+  if (!el) return;
+  el.innerHTML = `
+    <div class="water-card">
+      <div class="water-icon">💧</div>
+      <div class="water-info">
+        <strong>Water Supply</strong>
+        <span>${waterStatus === "low" ? "🪫 Running low — restock needed" : waterStatus === "full" ? "🔋 Fully stocked" : "Status not set"}</span>
+      </div>
+      <div class="water-toggle">
+        <button class="water-btn ${waterStatus === "low" ? "active-low" : ""}" onclick="setWater('low')">🪫 Low</button>
+        <button class="water-btn ${waterStatus === "full" ? "active-full" : ""}" onclick="setWater('full')">🔋 Full</button>
+      </div>
+    </div>
+  `;
+}
+
+function render(filter = "") {
+  const container = document.getElementById("mainContent");
+  const fl = filter.toLowerCase();
+  let html = "";
+
+  // Water widget placeholder
+  html += `<div class="water-section" id="waterSection"></div>`;
+
+  categories.forEach(cat => {
+    if (cat.isWater) return;
+
+    const allCatItems = [
+      ...cat.items,
+      ...customItems.filter(c => c.catId === cat.id)
+    ];
+
+    const visibleItems = fl
+      ? allCatItems.filter(i => i.name.toLowerCase().includes(fl))
+      : allCatItems;
+
+    if (fl && visibleItems.length === 0) return;
+
+    const total = allCatItems.length;
+    const done = allCatItems.filter(i => checked[itemKey(cat.id, i.name)]).length;
+
+    html += `<div class="category-block" id="cat-${cat.id}">`;
+    html += `<div class="category-header" onclick="toggleCat('${cat.id}')">
+      <div class="category-title">
+        <div class="category-emoji">${cat.emoji}</div>
+        <div>
+          <div class="category-name">${cat.name}</div>
+          <div class="category-count">${done}/${total} checked</div>
+        </div>
+      </div>
+      <div class="category-right">
+        <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+      </div>
+    </div>`;
+
+    html += `<div class="items-list">`;
+    allCatItems.forEach(item => {
+      const key = itemKey(cat.id, item.name);
+      const isChecked = checked[key];
+      const isHidden = fl && !item.name.toLowerCase().includes(fl);
+      html += `<div class="item-row${isChecked ? " checked" : ""}${isHidden ? " hidden" : ""}" onclick="toggleItem('${cat.id}', '${item.name.replace(/'/g,"\\'")}')">
+        <div class="checkbox">
+          <svg class="checkmark" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5"><polyline points="20 6 9 17 4 12"/></svg>
+        </div>
+        <div class="item-info">
+          <div class="item-name">${item.name}</div>
+          ${item.qty ? `<div class="item-qty">${item.qty}</div>` : ""}
+        </div>
+        ${item.suggested ? `<div class="item-badge suggested">💡 Suggested</div>` : ""}
+        ${item.custom ? `<div class="item-badge">Custom</div>` : ""}
+      </div>`;
+    });
+    html += `</div></div>`;
+  });
+
+  container.innerHTML = html;
+
+  // Restore collapsed states
+  collapsedCats.forEach(id => {
+    const el = document.getElementById("cat-" + id);
+    if (el) el.classList.add("collapsed");
+  });
+
+  // Insert water widget
+  const ws = document.getElementById("waterSection");
+  if (ws) {
+    ws.innerHTML = `<div id="waterWidget"></div>`;
+    renderWater();
+  }
+
+  updateProgress();
+  populateCatSelect();
+}
+
+let collapsedCats = new Set(JSON.parse(localStorage.getItem("collapsed_v1") || "[]"));
+
+function toggleCat(id) {
+  if (collapsedCats.has(id)) collapsedCats.delete(id);
+  else collapsedCats.add(id);
+  localStorage.setItem("collapsed_v1", JSON.stringify([...collapsedCats]));
+  const el = document.getElementById("cat-" + id);
+  if (el) el.classList.toggle("collapsed");
+}
+
+function filterItems(val) { render(val); }
+
+function populateCatSelect() {
+  const sel = document.getElementById("newItemCat");
+  if (!sel) return;
+  sel.innerHTML = categories.filter(c => !c.isWater).map(c =>
+    `<option value="${c.id}">${c.emoji} ${c.name}</option>`
+  ).join("");
+}
+
+function openModal() {
+  document.getElementById("modalOverlay").classList.add("open");
+  document.getElementById("newItemName").focus();
+  populateCatSelect();
+}
+
+function closeModal() {
+  document.getElementById("modalOverlay").classList.remove("open");
+  document.getElementById("newItemName").value = "";
+  document.getElementById("newItemQty").value = "";
+}
+
+function closeIfOutside(e) {
+  if (e.target === document.getElementById("modalOverlay")) closeModal();
+}
+
+function addCustomItem() {
+  const name = document.getElementById("newItemName").value.trim();
+  const qty = document.getElementById("newItemQty").value.trim();
+  const catId = document.getElementById("newItemCat").value;
+  if (!name) { alert("Please enter an item name."); return; }
+  customItems.push({ name, qty, catId, custom: true });
+  saveCustom();
+  closeModal();
+  render(document.getElementById("searchInput").value);
+}
+
+render();
+</script>
+</body>
+</html>
