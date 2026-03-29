@@ -78,6 +78,78 @@
   }
   .btn-reset:hover { opacity: 0.85; }
 
+  .btn-export {
+    background: rgba(255,255,255,0.15);
+    border: 1.5px solid rgba(255,255,255,0.25);
+    color: white;
+    border-radius: 8px;
+    padding: 7px 14px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.2s;
+    white-space: nowrap;
+  }
+  .btn-export:hover { background: rgba(255,255,255,0.25); }
+
+  .backup-bar {
+    display: flex;
+    gap: 8px;
+    padding: 10px 16px;
+    background: var(--surface);
+    border-bottom: 1.5px solid var(--border);
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  .backup-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--ink-soft);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    flex: 1;
+  }
+
+  .backup-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 14px;
+    border-radius: 8px;
+    border: 1.5px solid var(--border);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    background: var(--bg);
+    color: var(--ink);
+    transition: all 0.15s;
+  }
+  .backup-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .backup-btn.import-btn { background: var(--accent); color: white; border-color: var(--accent); }
+  .backup-btn.import-btn:hover { opacity: 0.88; }
+
+  .toast {
+    position: fixed;
+    bottom: 90px;
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: var(--ink);
+    color: white;
+    padding: 10px 20px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 500;
+    opacity: 0;
+    transition: all 0.3s;
+    pointer-events: none;
+    z-index: 999;
+    white-space: nowrap;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
   .search-bar {
     padding: 14px 20px 0;
     position: sticky;
@@ -430,6 +502,15 @@
 <div class="search-bar">
   <input type="text" id="searchInput" placeholder="Search items…" oninput="filterItems(this.value)">
 </div>
+
+<div class="backup-bar">
+  <span class="backup-label">💾 Backup</span>
+  <button class="backup-btn" onclick="exportData()">⬇️ Export</button>
+  <button class="backup-btn import-btn" onclick="document.getElementById('importFile').click()">⬆️ Import</button>
+  <input type="file" id="importFile" accept=".json" style="display:none" onchange="importData(event)">
+</div>
+
+<div class="toast" id="toast"></div>
 
 <div class="main" id="mainContent"></div>
 
@@ -835,6 +916,60 @@ function addCustomItem() {
   saveCustom();
   closeModal();
   render(document.getElementById("searchInput").value);
+}
+
+function showToast(msg) {
+  const t = document.getElementById("toast");
+  t.textContent = msg;
+  t.classList.add("show");
+  setTimeout(() => t.classList.remove("show"), 2800);
+}
+
+function exportData() {
+  const data = {
+    version: 1,
+    exportedAt: new Date().toISOString(),
+    checked,
+    waterStatus,
+    customItems,
+    collapsed: [...collapsedCats]
+  };
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  const date = new Date().toISOString().slice(0, 10);
+  a.href = url;
+  a.download = `shopping-list-backup-${date}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast("✅ Backup exported!");
+}
+
+function importData(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    try {
+      const data = JSON.parse(e.target.result);
+      if (!data.version) throw new Error("Invalid file");
+      if (!confirm("This will replace your current data with the backup. Continue?")) return;
+      checked = data.checked || {};
+      waterStatus = data.waterStatus || "none";
+      customItems = data.customItems || [];
+      collapsedCats = new Set(data.collapsed || []);
+      saveChecked();
+      saveWater();
+      saveCustom();
+      localStorage.setItem("collapsed_v1", JSON.stringify([...collapsedCats]));
+      render();
+      showToast("✅ Backup imported successfully!");
+    } catch {
+      showToast("❌ Invalid backup file.");
+    }
+    event.target.value = "";
+  };
+  reader.readAsText(file);
 }
 
 render();
