@@ -883,7 +883,7 @@ const categories = [
 
 const GOOGLE_CLIENT_ID = "1095610810532-8ltb0uclmtb8e9j838tfq37c8n95a5c1.apps.googleusercontent.com";
 const DRIVE_FILE_NAME = "shopping-list-data.json";
-const DRIVE_SCOPE = "https://www.googleapis.com/auth/drive.appdata";
+const DRIVE_SCOPE = "https://www.googleapis.com/auth/drive.appdata https://www.googleapis.com/auth/userinfo.profile";
 
 const STORAGE_KEY = "shoppingChecked_v3";
 const WATER_KEY = "waterStatus_v1";
@@ -915,9 +915,12 @@ function signIn() {
       if (resp.error) { showToast("❌ Sign in failed"); return; }
       accessToken = resp.access_token;
       const profile = await fetchGoogleProfile();
-      if (profile) {
+      if (profile && profile.picture) {
         document.getElementById("userAvatar").src = profile.picture;
-        document.getElementById("userName").textContent = profile.given_name || profile.name;
+        document.getElementById("userName").textContent = profile.given_name || profile.name || "Me";
+        document.getElementById("userPill").style.display = "flex";
+      } else {
+        document.getElementById("userName").textContent = "Me";
         document.getElementById("userPill").style.display = "flex";
       }
       document.getElementById("loginScreen").classList.add("hidden");
