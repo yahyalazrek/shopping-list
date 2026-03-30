@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>🛒 Shopping List</title>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 <style>
   :root {
     --bg: #F5F0E8;
@@ -505,17 +506,154 @@
   }
   .water-btn.active-low { background: #FFF3E0; border-color: #E65100; color: #E65100; }
   .water-btn.active-full { background: var(--green-soft); border-color: var(--green); color: var(--green); }
+
+  /* Login screen */
+  .login-screen {
+    position: fixed;
+    inset: 0;
+    background: var(--ink);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 24px;
+    z-index: 1000;
+    padding: 40px 24px;
+  }
+  .login-screen.hidden { display: none; }
+  .login-logo { font-size: 56px; }
+  .login-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 28px;
+    font-weight: 800;
+    color: white;
+    text-align: center;
+  }
+  .login-sub {
+    font-size: 14px;
+    color: rgba(255,255,255,0.5);
+    text-align: center;
+    max-width: 280px;
+    line-height: 1.6;
+  }
+  .google-btn {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: white;
+    color: #1A1A1A;
+    border: none;
+    border-radius: 12px;
+    padding: 14px 24px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+    transition: transform 0.15s, box-shadow 0.15s;
+  }
+  .google-btn:hover { transform: translateY(-1px); box-shadow: 0 6px 24px rgba(0,0,0,0.4); }
+  .google-btn img { width: 20px; height: 20px; }
+
+  /* Drive sync bar */
+  .sync-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    background: var(--green-soft);
+    border-bottom: 1.5px solid var(--green);
+    font-size: 12px;
+    color: var(--green);
+    font-weight: 500;
+  }
+  .sync-bar.syncing { background: #FFF8E1; border-color: #F9A825; color: #F9A825; }
+  .sync-bar.error { background: #FDECEA; border-color: #c0392b; color: #c0392b; }
+  .sync-bar.hidden { display: none; }
+  .sync-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: currentColor;
+    flex-shrink: 0;
+  }
+  .sync-dot.spinning {
+    animation: spin 1s linear infinite;
+  }
+  @keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+
+  .user-pill {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(255,255,255,0.12);
+    border-radius: 20px;
+    padding: 4px 10px 4px 4px;
+    cursor: pointer;
+  }
+  .user-pill img {
+    width: 24px; height: 24px;
+    border-radius: 50%;
+  }
+  .user-pill span {
+    font-size: 12px;
+    font-weight: 500;
+    max-width: 80px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .setup-banner {
+    background: #FFF8E1;
+    border-bottom: 1.5px solid #F9A825;
+    padding: 10px 16px;
+    font-size: 12px;
+    color: #795548;
+    line-height: 1.5;
+  }
+  .setup-banner strong { color: #E65100; }
+  .setup-banner.hidden { display: none; }
 </style>
 </head>
 <body>
+
+<!-- Login Screen -->
+<div class="login-screen" id="loginScreen">
+  <div class="login-logo">🛒</div>
+  <div class="login-title">Shopping List</div>
+  <div class="login-sub">Sign in with Google to sync your list across all your devices via your personal Drive.</div>
+  <button class="google-btn" onclick="signIn()">
+    <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google">
+    Sign in with Google
+  </button>
+  <div style="font-size:11px;color:rgba(255,255,255,0.3);text-align:center;max-width:260px">Your data is saved only in your own Google Drive. We never see it.</div>
+</div>
+
+<!-- Setup banner shown when Client ID not configured -->
+<div class="setup-banner hidden" id="setupBanner">
+  ⚙️ <strong>Setup needed:</strong> Replace <code>YOUR_CLIENT_ID</code> in the code with your Google OAuth Client ID to enable Drive sync.
+</div>
 
 <header>
   <h1>🛒 Shopping List</h1>
   <div class="header-right">
     <div class="progress-pill" id="globalProgress">0 / 0</div>
+    <div class="user-pill" id="userPill" onclick="signOut()" title="Sign out" style="display:none">
+      <img id="userAvatar" src="" alt="">
+      <span id="userName"></span>
+    </div>
     <button class="btn-reset" onclick="resetAll()">Reset</button>
   </div>
 </header>
+
+<!-- Sync status bar -->
+<div class="sync-bar hidden" id="syncBar">
+  <div class="sync-dot" id="syncDot"></div>
+  <span id="syncMsg">Synced with Google Drive</span>
+</div>
 
 <div class="search-bar">
   <input type="text" id="searchInput" placeholder="Search items…" oninput="filterItems(this.value)">
@@ -743,6 +881,10 @@ const categories = [
   },
 ];
 
+const GOOGLE_CLIENT_ID = "1095610810532-8ltb0uclmtb8e9j838tfq37c8n95a5c1.apps.googleusercontent.com";
+const DRIVE_FILE_NAME = "shopping-list-data.json";
+const DRIVE_SCOPE = "https://www.googleapis.com/auth/drive.appdata";
+
 const STORAGE_KEY = "shoppingChecked_v3";
 const WATER_KEY = "waterStatus_v1";
 const CUSTOM_KEY = "customItems_v1";
@@ -750,10 +892,146 @@ const CUSTOM_KEY = "customItems_v1";
 let checked = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
 let waterStatus = localStorage.getItem(WATER_KEY) || "none";
 let customItems = JSON.parse(localStorage.getItem(CUSTOM_KEY) || "[]");
+let accessToken = null;
+let driveFileId = null;
+let syncTimeout = null;
 
+// ─── Google Auth ───────────────────────────────────────────────
+function checkSetup() {
+  if (GOOGLE_CLIENT_ID === "YOUR_CLIENT_ID") {
+    document.getElementById("setupBanner").classList.remove("hidden");
+    document.getElementById("loginScreen").classList.add("hidden");
+    initApp();
+    return true;
+  }
+  return false;
+}
+
+function signIn() {
+  const client = google.accounts.oauth2.initTokenClient({
+    client_id: GOOGLE_CLIENT_ID,
+    scope: DRIVE_SCOPE,
+    callback: async (resp) => {
+      if (resp.error) { showToast("❌ Sign in failed"); return; }
+      accessToken = resp.access_token;
+      const profile = await fetchGoogleProfile();
+      if (profile) {
+        document.getElementById("userAvatar").src = profile.picture;
+        document.getElementById("userName").textContent = profile.given_name || profile.name;
+        document.getElementById("userPill").style.display = "flex";
+      }
+      document.getElementById("loginScreen").classList.add("hidden");
+      setSyncStatus("syncing", "Loading from Drive…");
+      await loadFromDrive();
+      render();
+      showToast("✅ Signed in & synced!");
+    }
+  });
+  client.requestAccessToken();
+}
+
+async function fetchGoogleProfile() {
+  try {
+    const r = await fetch("https://www.googleapis.com/oauth2/v3/userinfo", {
+      headers: { Authorization: "Bearer " + accessToken }
+    });
+    return await r.json();
+  } catch { return null; }
+}
+
+function signOut() {
+  if (!confirm("Sign out? Your data stays saved in your Google Drive.")) return;
+  accessToken = null;
+  driveFileId = null;
+  document.getElementById("userPill").style.display = "none";
+  document.getElementById("loginScreen").classList.remove("hidden");
+  showToast("👋 Signed out");
+}
+
+// ─── Drive Sync ────────────────────────────────────────────────
+function setSyncStatus(state, msg) {
+  const bar = document.getElementById("syncBar");
+  const dot = document.getElementById("syncDot");
+  const msgEl = document.getElementById("syncMsg");
+  bar.className = "sync-bar " + (state === "ok" ? "" : state);
+  dot.className = "sync-dot " + (state === "syncing" ? "spinning" : "");
+  msgEl.textContent = msg;
+  if (state !== "ok") bar.classList.remove("hidden");
+  else {
+    bar.classList.remove("hidden");
+    setTimeout(() => bar.classList.add("hidden"), 3000);
+  }
+}
+
+async function findDriveFile() {
+  const r = await fetch(
+    "https://www.googleapis.com/drive/v3/files?spaces=appDataFolder&q=name='" + DRIVE_FILE_NAME + "'&fields=files(id)",
+    { headers: { Authorization: "Bearer " + accessToken } }
+  );
+  const data = await r.json();
+  return data.files && data.files.length > 0 ? data.files[0].id : null;
+}
+
+async function loadFromDrive() {
+  if (!accessToken) return;
+  try {
+    driveFileId = await findDriveFile();
+    if (!driveFileId) { setSyncStatus("ok", "No previous data — starting fresh"); return; }
+    const r = await fetch(
+      "https://www.googleapis.com/drive/v3/files/" + driveFileId + "?alt=media",
+      { headers: { Authorization: "Bearer " + accessToken } }
+    );
+    const data = await r.json();
+    checked = data.checked || {};
+    waterStatus = data.waterStatus || "none";
+    customItems = data.customItems || [];
+    saveChecked(); saveWater(); saveCustom();
+    setSyncStatus("ok", "Synced with Google Drive ✓");
+  } catch (e) {
+    setSyncStatus("error", "Could not load from Drive");
+  }
+}
+
+async function saveToDrive() {
+  if (!accessToken) return;
+  setSyncStatus("syncing", "Saving to Drive…");
+  const payload = JSON.stringify({ version: 1, checked, waterStatus, customItems, savedAt: new Date().toISOString() });
+  try {
+    if (driveFileId) {
+      await fetch("https://www.googleapis.com/upload/drive/v3/files/" + driveFileId + "?uploadType=media", {
+        method: "PATCH",
+        headers: { Authorization: "Bearer " + accessToken, "Content-Type": "application/json" },
+        body: payload
+      });
+    } else {
+      const meta = await fetch("https://www.googleapis.com/drive/v3/files", {
+        method: "POST",
+        headers: { Authorization: "Bearer " + accessToken, "Content-Type": "application/json" },
+        body: JSON.stringify({ name: DRIVE_FILE_NAME, parents: ["appDataFolder"] })
+      });
+      const metaData = await meta.json();
+      driveFileId = metaData.id;
+      await fetch("https://www.googleapis.com/upload/drive/v3/files/" + driveFileId + "?uploadType=media", {
+        method: "PATCH",
+        headers: { Authorization: "Bearer " + accessToken, "Content-Type": "application/json" },
+        body: payload
+      });
+    }
+    setSyncStatus("ok", "Saved to Drive ✓");
+  } catch {
+    setSyncStatus("error", "Sync failed — saved locally");
+  }
+}
+
+function scheduleSave() {
+  clearTimeout(syncTimeout);
+  syncTimeout = setTimeout(saveToDrive, 1500); // debounce: save 1.5s after last change
+}
+
+// ─── Data functions ─────────────────────────────────────────────
 function saveChecked() { localStorage.setItem(STORAGE_KEY, JSON.stringify(checked)); }
-function saveWater() { localStorage.setItem(WATER_KEY, waterStatus); }
-function saveCustom() { localStorage.setItem(CUSTOM_KEY, JSON.stringify(customItems)); }
+function saveWater()   { localStorage.setItem(WATER_KEY, waterStatus); }
+function saveCustom()  { localStorage.setItem(CUSTOM_KEY, JSON.stringify(customItems)); }
 
 function itemKey(catId, name) { return catId + "::" + name; }
 
@@ -763,12 +1041,14 @@ function toggleItem(catId, name) {
   saveChecked();
   render();
   updateProgress();
+  scheduleSave();
 }
 
 function setWater(status) {
   waterStatus = status;
   saveWater();
   renderWater();
+  scheduleSave();
 }
 
 function resetAll() {
@@ -779,6 +1059,7 @@ function resetAll() {
   saveWater();
   render();
   updateProgress();
+  scheduleSave();
 }
 
 function getAllItems() {
@@ -820,22 +1101,12 @@ function render(filter = "") {
   const container = document.getElementById("mainContent");
   const fl = filter.toLowerCase();
   let html = "";
-
-  // Water widget placeholder
   html += `<div class="water-section" id="waterSection"></div>`;
 
   categories.forEach(cat => {
     if (cat.isWater) return;
-
-    const allCatItems = [
-      ...cat.items,
-      ...customItems.filter(c => c.catId === cat.id)
-    ];
-
-    const visibleItems = fl
-      ? allCatItems.filter(i => i.name.toLowerCase().includes(fl))
-      : allCatItems;
-
+    const allCatItems = [...cat.items, ...customItems.filter(c => c.catId === cat.id)];
+    const visibleItems = fl ? allCatItems.filter(i => i.name.toLowerCase().includes(fl)) : allCatItems;
     if (fl && visibleItems.length === 0) return;
 
     const total = allCatItems.length;
@@ -879,13 +1150,11 @@ function render(filter = "") {
 
   container.innerHTML = html;
 
-  // Restore collapsed states
   collapsedCats.forEach(id => {
     const el = document.getElementById("cat-" + id);
     if (el) el.classList.add("collapsed");
   });
 
-  // Insert water widget
   const ws = document.getElementById("waterSection");
   if (ws) {
     ws.innerHTML = `<div id="waterWidget"></div>`;
@@ -941,6 +1210,7 @@ function addCustomItem() {
   saveCustom();
   closeModal();
   render(document.getElementById("searchInput").value);
+  scheduleSave();
 }
 
 function deleteCustomItem(catId, name) {
@@ -950,6 +1220,7 @@ function deleteCustomItem(catId, name) {
   saveChecked();
   render(document.getElementById("searchInput").value);
   showToast("🗑️ Item removed");
+  scheduleSave();
 }
 
 function showToast(msg) {
@@ -960,20 +1231,12 @@ function showToast(msg) {
 }
 
 function exportData() {
-  const data = {
-    version: 1,
-    exportedAt: new Date().toISOString(),
-    checked,
-    waterStatus,
-    customItems,
-    collapsed: [...collapsedCats]
-  };
+  const data = { version: 1, exportedAt: new Date().toISOString(), checked, waterStatus, customItems, collapsed: [...collapsedCats] };
   const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
-  const date = new Date().toISOString().slice(0, 10);
   a.href = url;
-  a.download = `shopping-list-backup-${date}.json`;
+  a.download = `shopping-list-backup-${new Date().toISOString().slice(0,10)}.json`;
   a.click();
   URL.revokeObjectURL(url);
   showToast("✅ Backup exported!");
@@ -992,21 +1255,28 @@ function importData(event) {
       waterStatus = data.waterStatus || "none";
       customItems = data.customItems || [];
       collapsedCats = new Set(data.collapsed || []);
-      saveChecked();
-      saveWater();
-      saveCustom();
+      saveChecked(); saveWater(); saveCustom();
       localStorage.setItem("collapsed_v1", JSON.stringify([...collapsedCats]));
       render();
-      showToast("✅ Backup imported successfully!");
-    } catch {
-      showToast("❌ Invalid backup file.");
-    }
+      showToast("✅ Backup imported!");
+      scheduleSave();
+    } catch { showToast("❌ Invalid backup file."); }
     event.target.value = "";
   };
   reader.readAsText(file);
 }
 
-render();
+// ─── Init ───────────────────────────────────────────────────────
+function initApp() {
+  render();
+}
+
+window.addEventListener("load", () => {
+  if (!checkSetup()) {
+    // Show login screen — user must sign in
+    document.getElementById("loginScreen").classList.remove("hidden");
+  }
+});
 </script>
 </body>
 </html>
