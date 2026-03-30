@@ -570,6 +570,22 @@
   .google-btn:hover { transform: translateY(-1px); box-shadow: 0 6px 24px rgba(0,0,0,0.4); }
   .google-btn img { width: 20px; height: 20px; }
 
+  .guest-btn {
+    background: transparent;
+    border: 1.5px solid rgba(255,255,255,0.2);
+    color: rgba(255,255,255,0.7);
+    border-radius: 12px;
+    padding: 13px 24px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    width: 100%;
+    max-width: 280px;
+  }
+  .guest-btn:hover { border-color: rgba(255,255,255,0.5); color: white; }
+
   /* Drive sync bar */
   .sync-bar {
     display: flex;
@@ -648,6 +664,13 @@
     Sign in with Google
   </button>
   <div style="font-size:11px;color:rgba(255,255,255,0.3);text-align:center;max-width:260px">Your data is saved only in your own Google Drive. We never see it.</div>
+  <div style="display:flex;align-items:center;gap:12px;width:100%;max-width:280px">
+    <div style="flex:1;height:1px;background:rgba(255,255,255,0.12)"></div>
+    <span style="font-size:12px;color:rgba(255,255,255,0.3)">or</span>
+    <div style="flex:1;height:1px;background:rgba(255,255,255,0.12)"></div>
+  </div>
+  <button class="guest-btn" onclick="continueAsGuest()">Continue without account</button>
+  <div style="font-size:11px;color:rgba(255,255,255,0.25);text-align:center;max-width:260px">Data saved on this device only. Use Export to back up manually.</div>
 </div>
 
 <!-- Setup banner shown when Client ID not configured -->
@@ -960,8 +983,17 @@ async function fetchGoogleProfile() {
   } catch { return null; }
 }
 
+function continueAsGuest() {
+  accessToken = null;
+  driveFileId = null;
+  document.getElementById("loginScreen").classList.add("hidden");
+  document.getElementById("userPill").style.display = "none";
+  showToast("👤 Using local storage — export to back up");
+  initApp();
+}
+
 function signOut() {
-  if (!confirm("Sign out? Your data stays saved in your Google Drive.")) return;
+  if (!confirm("Sign out?")) return;
   accessToken = null;
   driveFileId = null;
   document.getElementById("userPill").style.display = "none";
@@ -1045,8 +1077,9 @@ async function saveToDrive() {
 }
 
 function scheduleSave() {
+  if (!accessToken) return; // guest mode — localStorage only
   clearTimeout(syncTimeout);
-  syncTimeout = setTimeout(saveToDrive, 1500); // debounce: save 1.5s after last change
+  syncTimeout = setTimeout(saveToDrive, 1500);
 }
 
 // ─── Data functions ─────────────────────────────────────────────
