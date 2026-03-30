@@ -22,6 +22,11 @@
 
   * { box-sizing: border-box; margin: 0; padding: 0; }
 
+  html, body {
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+
   body {
     font-family: 'DM Sans', sans-serif;
     background: var(--bg);
@@ -33,34 +38,37 @@
   header {
     background: var(--ink);
     color: white;
-    padding: 28px 20px 24px;
+    padding: 16px 14px;
     position: sticky;
     top: 0;
     z-index: 100;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 12px;
+    gap: 8px;
+    width: 100%;
   }
 
   header h1 {
     font-family: 'Syne', sans-serif;
-    font-size: 22px;
+    font-size: 18px;
     font-weight: 800;
     letter-spacing: -0.5px;
+    flex-shrink: 0;
   }
 
   .header-right {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 6px;
+    flex-shrink: 0;
   }
 
   .progress-pill {
     background: rgba(255,255,255,0.12);
     border-radius: 20px;
-    padding: 5px 14px;
-    font-size: 13px;
+    padding: 4px 10px;
+    font-size: 12px;
     font-weight: 500;
     white-space: nowrap;
   }
@@ -70,12 +78,13 @@
     border: none;
     color: white;
     border-radius: 8px;
-    padding: 7px 14px;
+    padding: 6px 10px;
     font-family: 'DM Sans', sans-serif;
-    font-size: 13px;
+    font-size: 12px;
     font-weight: 500;
     cursor: pointer;
     transition: opacity 0.2s;
+    white-space: nowrap;
   }
   .btn-reset:hover { opacity: 0.85; }
 
@@ -97,11 +106,12 @@
   .backup-bar {
     display: flex;
     gap: 8px;
-    padding: 10px 16px;
+    padding: 8px 12px;
     background: var(--surface);
     border-bottom: 1.5px solid var(--border);
     align-items: center;
     flex-wrap: wrap;
+    width: 100%;
   }
 
   .backup-label {
@@ -152,12 +162,12 @@
   .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
   .search-bar {
-    padding: 14px 20px 0;
+    padding: 10px 12px 4px;
     position: sticky;
-    top: 78px;
+    top: 54px;
     z-index: 99;
     background: var(--bg);
-    padding-bottom: 4px;
+    width: 100%;
   }
 
   .search-bar input {
@@ -177,7 +187,7 @@
   }
   .search-bar input:focus { border-color: var(--accent); }
 
-  .main { padding: 16px 16px 0; }
+  .main { padding: 12px 12px 0; width: 100%; }
 
   .category-block {
     background: var(--surface);
@@ -348,9 +358,9 @@
 
   .add-custom {
     position: fixed;
-    bottom: 20px;
-    right: 20px;
-    left: 20px;
+    bottom: 16px;
+    right: 12px;
+    left: 12px;
     background: var(--ink);
     color: white;
     border: none;
@@ -361,6 +371,7 @@
     box-shadow: 0 4px 20px rgba(0,0,0,0.2);
     overflow: hidden;
     z-index: 200;
+    max-width: calc(100vw - 24px);
   }
 
   .add-custom-inner {
@@ -455,22 +466,24 @@
   }
 
   .water-section {
-    padding: 0 16px 4px;
-    margin-top: -6px;
+    padding: 0 12px 4px;
+    margin-top: -4px;
     display: flex;
     flex-direction: column;
     gap: 8px;
+    width: 100%;
   }
 
   .water-card {
     background: var(--surface);
     border: 1.5px solid var(--border);
     border-radius: 16px;
-    padding: 14px 16px;
+    padding: 12px 14px;
     display: flex;
     align-items: center;
-    gap: 14px;
+    gap: 10px;
     box-shadow: var(--shadow);
+    flex-wrap: wrap;
   }
 
   .water-icon {
@@ -516,9 +529,11 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 24px;
+    gap: 20px;
     z-index: 1000;
-    padding: 40px 24px;
+    padding: 32px 20px;
+    width: 100%;
+    overflow: hidden;
   }
   .login-screen.hidden { display: none; }
   .login-logo { font-size: 56px; }
@@ -590,17 +605,20 @@
     gap: 6px;
     background: rgba(255,255,255,0.12);
     border-radius: 20px;
-    padding: 4px 10px 4px 4px;
+    padding: 4px 8px 4px 4px;
     cursor: pointer;
+    max-width: 100px;
+    overflow: hidden;
   }
   .user-pill img {
-    width: 24px; height: 24px;
+    width: 22px; height: 22px;
     border-radius: 50%;
+    flex-shrink: 0;
   }
   .user-pill span {
-    font-size: 12px;
+    font-size: 11px;
     font-weight: 500;
-    max-width: 80px;
+    max-width: 60px;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
