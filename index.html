@@ -663,7 +663,6 @@
       <img id="userAvatar" src="" alt="">
       <span id="userName"></span>
     </div>
-    <button class="btn-reset" onclick="resetAll()">Reset</button>
   </div>
 </header>
 
@@ -681,6 +680,7 @@
   <span class="backup-label">💾 Backup</span>
   <button class="backup-btn" onclick="exportData()">⬇️ Export</button>
   <button class="backup-btn import-btn" onclick="document.getElementById('importFile').click()">⬆️ Import</button>
+  <button class="backup-btn" onclick="resetAll()" style="color:#c0392b;border-color:#c0392b;">🔄 Reset</button>
   <input type="file" id="importFile" accept=".json" style="display:none" onchange="importData(event)">
 </div>
 
